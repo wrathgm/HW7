@@ -1,0 +1,92 @@
+Задача 1. Создайте пользовательский аналог метода map().
+
+def custom_map(func, iterable):
+    result = []
+    for item in iterable:
+        result.append(func(item))
+    return result
+
+def square(x):
+    return x ** 2
+
+numbers = [1, 2, 3, 4, 5]
+result = custom_map(square, numbers)
+print(result)  # Вывод: [1, 4, 9, 16, 25]
+
+
+
+Задача 2. Создайте декоратор, повторяющий функцию заданное количество раз.
+
+import functools
+
+def repeat(num_times):
+    def decorator_repeat(func):
+        @functools.wraps(func)
+        def wrapper_repeat(*args, **kwargs):
+            for _ in range(num_times):
+                result = func(*args, **kwargs)
+            return result
+        return wrapper_repeat
+    return decorator_repeat
+
+@repeat(5)
+def greet(name):
+    print(f"Hello, {name}!")
+
+greet("John")
+
+Задача 3. Добавьте в telegram-бота игру «Угадай числа». Бот загадывает число от 1 до 1000. Когда игрок угадывает его, бот выводит количество сделанных ходов.
+
+
+import random
+from telegram import Update, ReplyKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext
+
+# Глобальная переменная для хранения загаданного числа
+target_number = None
+# Глобальная переменная для хранения количества попыток
+attempts = 0
+
+# Функция-обработчик команды /start
+def start(update: Update, context: CallbackContext) -> None:
+    global target_number, attempts
+    target_number = random.randint(1, 1000)
+    attempts = 0
+    update.message.reply_text("Привет! Я загадал число от 1 до 1000. Попробуй угадать!")
+
+# Функция-обработчик сообщений с числами
+def guess_number(update: Update, context: CallbackContext) -> None:
+    global target_number, attempts
+    attempts += 1
+    guess = int(update.message.text)
+    
+    if guess == target_number:
+        update.message.reply_text(f"Поздравляю, ты угадал число {target_number}! Количество попыток: {attempts}")
+        target_number = None
+        attempts = 0
+    elif guess < target_number:
+        update.message.reply_text("Загаданное число больше.")
+    else:
+        update.message.reply_text("Загаданное число меньше.")
+
+# Функция-обработчик неизвестных команд и сообщений
+def unknown(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text("Извини, я не понимаю эту команду.")
+
+def main() -> None:
+    # Инициализация бота
+    updater = Updater("6061267234:AAGnQl0dTJUjVJyZROoFzMR4wGwAi620nwI", use_context=True)
+
+    # Получение диспетчера для регистрации обработчиков
+    dispatcher = updater.dispatcher
+
+    # Регистрация обработчиков команд и сообщений
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, guess_number))
+    dispatcher.add_handler(MessageHandler(Filters.command, unknown))
+
+    # Запуск бота
+    updater.start_polling()
+
+if __name__ == '__main__':
+    main()
